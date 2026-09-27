@@ -11,8 +11,8 @@ import (
 
 func main() {
 
-	loggingStore := CreateStore()
-	encrypted, err := SetWithEncryption(loggingStore, "Hello", "World!")
+	metricStore := CreateStoreWithMetrics()
+	encrypted, err := SetWithEncryption(metricStore, "Hello", "World!")
 
 	if err != nil {
 		fmt.Println(err)
@@ -21,13 +21,14 @@ func main() {
 
 	fmt.Println("encrypted:", encrypted)
 
-	val, err := GetWithDecryption(loggingStore, "Hello")
+	val, err := GetWithDecryption(metricStore, "Hello")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	fmt.Println("decrypted:", val)
+	metricStore.Report()
 
 	// keyValueStore.Delete("hero")
 	// _, err = keyValueStore.Get("hero")
@@ -41,6 +42,13 @@ func CreateStore() store.Storer {
 	keyValueStore := kv.NewStore(20)
 	loggingStore := middleware.NewLoggingMiddleware(keyValueStore)
 	return loggingStore
+}
+
+func CreateStoreWithMetrics() *middleware.MetricsMiddleware{
+	keyValueStore := kv.NewStore(20)
+	loggingStore := middleware.NewLoggingMiddleware(keyValueStore)
+	metricStore := middleware.NewMetricsMiddleware(loggingStore)
+	return metricStore
 }
 
 func SetWithEncryption(store store.Storer, key, value string) (string, error) {
