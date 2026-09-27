@@ -4,32 +4,43 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/itstheanurag/in-memory/middleware"
 	"github.com/itstheanurag/in-memory/store"
 	"github.com/itstheanurag/in-memory/store/kv"
 )
 
 func main() {
 
-	keyValueStore := kv.NewStore(20)
-	loggingStore := NewLoggingMiddleware(keyValueStore)
-
+	loggingStore := CreateStore()
 	encrypted, err := SetWithEncryption(loggingStore, "Hello", "World!")
 
-	fmt.Print("encrypted: %v", encrypted)
-	value, err := loggingStore.Get("Hello")
-
-	if err == nil {
-		fmt.Println("Value:", value)
-	} else {
-		fmt.Println("Key not found")
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	keyValueStore.Delete("hero")
-	_, err = keyValueStore.Get("hero")
+	fmt.Println("encrypted:", encrypted)
 
-	fmt.Println(err)
+	val, err := GetWithDecryption(loggingStore, "Hello")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	fmt.Println("In memory datastore, fully written in Golang")
+	fmt.Println("decrypted:", val)
+
+	// keyValueStore.Delete("hero")
+	// _, err = keyValueStore.Get("hero")
+
+	// fmt.Println(err)
+
+	// fmt.Println("In memory datastore, fully written in Golang")
+}
+
+func CreateStore() store.Storer {
+	keyValueStore := kv.NewStore(20)
+	loggingStore := middleware.NewLoggingMiddleware(keyValueStore)
+	return loggingStore
 }
 
 func SetWithEncryption(store store.Storer, key, value string) (string, error) {
@@ -40,4 +51,19 @@ func SetWithEncryption(store store.Storer, key, value string) (string, error) {
 	}
 
 	return encoded, nil
+}
+
+func GetWithDecryption(store store.Storer, key string) (string, error) {
+	encoded, err := store.Get(key)
+
+	if err != nil {
+		return "", err
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decoded), nil
 }

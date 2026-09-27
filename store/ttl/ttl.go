@@ -50,6 +50,7 @@ func (s *TTLStore) Get(key string) (string, error) {
 		return "", ErrKeyNotFound
 	}
 
+	// lazy eviction, alternatives are background loop or maintain a min heap.
 	if time.Now().After(entry.expiresAt) {
 		delete(s.data, key)
 		return "", ErrKeyExpired
