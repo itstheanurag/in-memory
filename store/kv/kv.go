@@ -1,7 +1,6 @@
-package main
+package kv
 
 import (
-	"encoding/base64"
 	"fmt"
 	"sort"
 )
@@ -75,16 +74,6 @@ func (s *Store) Keys() []string {
 	// sort the keys
 	sort.Strings(keys)
 	return keys
-}
-
-func (s *Store) StoreWithEncryption(key, val string) (string, error) {
-	encoded := base64.StdEncoding.EncodeToString([]byte(val))
-
-	if err := s.Set(key, encoded); err != nil {
-		return "", err
-	}
-
-	return s.Get(key)
 }
 
 func (s *Store) Len() int {

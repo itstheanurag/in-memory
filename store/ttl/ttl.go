@@ -1,4 +1,4 @@
-package main
+package ttl
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 var (
 	ErrKeyExpired  = errors.New("key has expired")
 	ErrKeyNotFound = errors.New("key not found")
+	ErrEmptyKey    = errors.New("key is empty")
 )
 
 type TTLStore struct {
