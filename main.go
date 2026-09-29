@@ -10,32 +10,19 @@ import (
 )
 
 func main() {
-
-	metricStore := CreateStoreWithMetrics()
-	encrypted, err := SetWithEncryption(metricStore, "Hello", "World!")
-
-	if err != nil {
-		fmt.Println(err)
-		return
+	cmds := []Command{
+		{Op: "SET", Key: "env", Value: "production"},
+		{Op: "SET", Key: "version", Value: "0.0.1"},
+		{Op: "SET", Key: "debug", Value: "true"},
+		{Op: "GET", Key: "version"},
+		{Op: "SET", Key: "region", Value: "eu-west-1"},
+		{Op: "SET", Key: "project", Value: "in-memory"},
+		{Op: "GET", Key: "env"},
 	}
+	store := CreateStoreWithMetrics()
+	RestoreOnBoot(store, cmds)
+	store.Report()
 
-	fmt.Println("encrypted:", encrypted)
-
-	val, err := GetWithDecryption(metricStore, "Hello")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("decrypted:", val)
-	metricStore.Report()
-
-	// keyValueStore.Delete("hero")
-	// _, err = keyValueStore.Get("hero")
-
-	// fmt.Println(err)
-
-	// fmt.Println("In memory datastore, fully written in Golang")
 }
 
 func CreateStore() store.Storer {
@@ -44,7 +31,7 @@ func CreateStore() store.Storer {
 	return loggingStore
 }
 
-func CreateStoreWithMetrics() *middleware.MetricsMiddleware{
+func CreateStoreWithMetrics() *middleware.MetricsMiddleware {
 	keyValueStore := kv.NewStore(20)
 	loggingStore := middleware.NewLoggingMiddleware(keyValueStore)
 	metricStore := middleware.NewMetricsMiddleware(loggingStore)
@@ -74,4 +61,22 @@ func GetWithDecryption(store store.Storer, key string) (string, error) {
 	}
 
 	return string(decoded), nil
+}
+
+func PopulateDefaults(store store.Storer) error {
+	defaults := map[string]string{
+		"enviornment": "production",
+		"version":     "0.0.1",
+		"debug":       "true",
+		"author":      "gaurav",
+		"project":     "in-memory",
+	}
+
+	for key, value := range defaults {
+		if err := store.Set(key, value); err != nil {
+			return fmt.Errorf("PopulateDefaults: %w", err)
+		}
+	}
+
+	return nil
 }

@@ -2,6 +2,7 @@ package kv
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 )
 
@@ -10,6 +11,7 @@ var ErrEmptyKey = fmt.Errorf("key cannot be empty")
 var ErrStoreFull = fmt.Errorf("store is full, upgrade your tier")
 
 type Store struct {
+	// mu      sync.Mutex
 	data    map[string]string
 	maxSize int
 }
@@ -22,7 +24,6 @@ func NewStore(size int) *Store {
 }
 
 func (s *Store) Get(key string) (string, error) {
-
 	if key == "" {
 		return "", ErrEmptyKey
 	}
@@ -42,14 +43,12 @@ func (s *Store) Set(key, value string) error {
 		return ErrEmptyKey
 	}
 
-	_, err := s.Get(key)
-
-	if err == nil {
+	if _, exists := s.data[key]; exists {
 		s.data[key] = value
 		return nil
 	}
 
-	if s.maxSize > 0 && s.Len() >= s.maxSize {
+	if s.maxSize > 0 && len(s.data) >= s.maxSize {
 		return ErrStoreFull
 	}
 
@@ -78,4 +77,20 @@ func (s *Store) Keys() []string {
 
 func (s *Store) Len() int {
 	return len(s.data)
+}
+
+// clone an independent copy of the store
+func (s *Store) Clone() *Store {
+	cp := &Store{
+		data:    make(map[string]string, len(s.data)),
+		maxSize: s.maxSize,
+	}
+
+	// for key, value := range s.data {
+	// 	cp.data[key] = value
+	// }
+
+	maps.Copy(cp.data, s.data)
+
+	return cp
 }
