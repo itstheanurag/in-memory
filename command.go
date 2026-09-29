@@ -21,6 +21,8 @@ func dispatch(s store.Storer, cmd Command) {
 		s.Get(cmd.Key)
 	case "DELETE":
 		s.Delete(cmd.Key)
+	case "INCR":
+		s.Incr(cmd.Key)
 	}
 }
 
